@@ -272,6 +272,84 @@ public:
     return strtof(value_ptr, nullptr);
   }
 
+  //Gorien
+  // if 'command_ptr' contain target string or not (clh)
+  static inline bool str_contain(char* _str) { if(strstr(command_ptr, _str)) return true; else return false; }
+  // get the string after target string, return true:find the string
+  static inline bool getStrAfterTargetStr(char* _targetStr, char* _desiredStr)
+  {
+    char* lPChar;
+    if(strstr(command_ptr, _targetStr))
+    {
+      lPChar = &command_ptr[strlen(_targetStr)];
+      memcpy(_desiredStr, lPChar, strlen(lPChar));
+      return true;
+    }
+    else
+    {
+      return false;
+    }
+  }
+  // get the value(Dec) after target string, _val: the value(DEC), return true:find the value
+  static inline bool getDecValAfterTargetStr(char* _str, uint32_t* _val)
+  {
+    char* lPVal;
+    uint8_t lVal = 0;
+    if(strstr(command_ptr, _str))
+    {
+      lPVal = &command_ptr[strlen(_str)];
+      if(NUMERIC(*lPVal))
+      {
+        while(1)
+        {
+          if(NUMERIC(*lPVal))
+          {
+            if(NUMERIC(*lPVal)) lVal = *lPVal - '0';
+            (*_val) = (*_val) * 10 + lVal;
+            lPVal ++;
+          }
+          else
+            return true;
+        }
+      }
+      else
+        return false;
+    }
+    else
+      return false;
+  }
+  // get the value(Hex) after target string, _val: the value(Hex), return true:find the value
+  static inline bool getHexValAfterTargetStr(char* _str, uint32_t* _val)
+  { 
+    char* lPVal;
+    uint8_t lVal = 0;
+    if(strstr(command_ptr, _str))
+    {
+      lPVal = &command_ptr[strlen(_str)];
+      if(NUMERIC(*lPVal) || ((*lPVal >= 'a')&&(*lPVal <= 'f')) || ((*lPVal >= 'A')&&(*lPVal <= 'F')))
+      {
+        while(1)
+        {
+          if(NUMERIC(*lPVal) || ((*lPVal >= 'a')&&(*lPVal <= 'f')) || ((*lPVal >= 'A')&&(*lPVal <= 'F')))
+          {
+            if(NUMERIC(*lPVal)) lVal = *lPVal - '0';
+            else if((*lPVal >= 'a')&&(*lPVal <= 'f')) lVal = *lPVal - 'a' + 10;
+            else if((*lPVal >= 'A')&&(*lPVal <= 'F')) lVal = *lPVal - 'A' + 10;
+            (*_val) = (*_val) * 0x10 + lVal;
+            lPVal ++;
+          }
+          else
+            return true;
+        }
+      }
+      else
+        return false;
+    }
+    else
+      return false;
+  }
+
+
   // Code value as a long or ulong
   static int32_t value_long() { return value_ptr ? strtol(value_ptr, nullptr, 10) : 0L; }
   static uint32_t value_ulong() { return value_ptr ? strtoul(value_ptr, nullptr, 10) : 0UL; }

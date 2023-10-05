@@ -688,6 +688,11 @@ private:
     static void M48();
   #endif
 
+  //Gorien
+  #if WIFI_BOARD_SUPPORT
+  	static void M72();
+  #endif
+
   #if ENABLED(SET_PROGRESS_MANUALLY)
     static void M73();
   #endif
@@ -698,6 +703,11 @@ private:
 
   #if ENABLED(PRINTCOUNTER)
     static void M78();
+  #endif
+
+  //Gorien
+  #if WIFI_BOARD_SUPPORT
+  	static void M79();
   #endif
 
   #if ENABLED(PSU_CONTROL)
@@ -1217,9 +1227,10 @@ private:
     static void M928();
   #endif
 
-  #if ENABLED(OTA_FIRMWARE_UPDATE)
-    static void M936();
-  #endif
+  //Gorien
+  //#if ENABLED(OTA_FIRMWARE_UPDATE)
+  //  static void M936();
+  //#endif
 
   #if ENABLED(MAGNETIC_PARKING_EXTRUDER)
     static void M951();
@@ -1274,6 +1285,11 @@ private:
   #if ENABLED(CONTROLLER_FAN_EDITABLE)
     static void M710();
     static void M710_report(const bool forReplay=true);
+  #endif
+
+  //Gorien
+  #if ENABLE_OTA
+    static void M936();
   #endif
 
   static void T(const int8_t tool_index);

@@ -38,6 +38,12 @@
 
 #include "../../MarlinCore.h" // for startOrResumeJob, etc.
 
+//Gorien
+ //#ifdef RTS_AVAILABLE
+    #include "../../lcd/extui/sermoon_v1_creality/lcdAutoUI.h"
+    #include "../../lcd/extui/sermoon_v1_creality/sermoon_v1_rts.h"
+ //#endif
+
 #if ENABLED(PRINTJOB_TIMER_AUTOSTART)
   #include "../../module/printcounter.h"
   #if ENABLED(CANCEL_OBJECTS)
@@ -76,6 +82,10 @@
 void GcodeSuite::M104_M109(const bool isM109) {
 
   if (DEBUGGING(DRYRUN)) return;
+
+  //Gorien
+  /* if user set print-mode(PLA or ABS), filter the 'M104' command */
+  if(gLcdAutoUI.GetCurPrintMode() != PRINT_MODE_INVAILD) return;
 
   #if ENABLED(MIXING_EXTRUDER) && MIXING_VIRTUAL_TOOLS > 1
     constexpr int8_t target_extruder = 0;

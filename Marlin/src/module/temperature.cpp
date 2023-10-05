@@ -37,6 +37,12 @@
 #include "planner.h"
 #include "printcounter.h"
 
+//Gorien
+ //#ifdef RTS_AVAILABLE
+    #include "../lcd/extui/sermoon_v1_creality/lcdAutoUI.h"
+    #include "../lcd/extui/sermoon_v1_creality/sermoon_v1_rts.h"
+ //#endif
+
 #if ANY(HAS_COOLER, LASER_COOLANT_FLOW_METER)
   #include "../feature/cooler.h"
   #include "../feature/spindle_laser.h"
@@ -829,6 +835,17 @@ volatile bool Temperature::raw_temps_ready = false;
       #endif
       if ((ms - _MIN(t1, t2)) > (MAX_CYCLE_TIME_PID_AUTOTUNE * 60L * 1000L)) {
         TERN_(DWIN_CREALITY_LCD, dwinPopupTemperature(0));
+
+        //Gorien
+        #ifdef RTS_AVAILABLE
+          /* remove file that record information print-job recovery */
+          #if ENABLED(SDSUPPORT) && ENABLED(POWER_LOSS_RECOVERY)
+            card.removeJobRecoveryFile();
+          #endif
+          gLcdAutoUI.SwitchBackgroundPic(AUTOUI_ERRORPW);
+          gLcdAutoUI.DisplayText((char*)ERR_1, TEXTVAR_ADDR_ERR_TIPS);
+        #endif   
+
         TERN_(PROUI_PID_TUNE, dwinPidTuning(PID_TUNING_TIMEOUT));
         TERN_(EXTENSIBLE_UI, ExtUI::onPidTuning(ExtUI::result_t::PID_TUNING_TIMEOUT));
         TERN_(HOST_PROMPT_SUPPORT, hostui.notify(GET_TEXT_F(MSG_PID_TIMEOUT)));
@@ -4205,14 +4222,12 @@ void Temperature::isr() {
         case H_REDUNDANT: k = 'R'; break;
       #endif
     }
-    #ifndef HEATER_STATE_FLOAT_PRECISION
-      #define HEATER_STATE_FLOAT_PRECISION _MIN(SERIAL_FLOAT_PRECISION, 2)
-    #endif
+    #define SFP _MIN(SERIAL_FLOAT_PRECISION, 2)
 
     SString<50> s(' ', k);
     if (TERN0(HAS_MULTI_HOTEND, e >= 0)) s += char('0' + e);
-    s += ':'; s += p_float_t(c, HEATER_STATE_FLOAT_PRECISION);
-    if (show_t) { s += F(" /"); s += p_float_t(t, HEATER_STATE_FLOAT_PRECISION); }
+    s += ':'; s += p_float_t(c, SFP);
+    if (show_t) { s += F(" /"); s += p_float_t(t, SFP); }
     #if ENABLED(SHOW_TEMP_ADC_VALUES)
       // Temperature MAX SPI boards do not have an OVERSAMPLENR defined
       s.append(F(" ("), TERN(HAS_MAXTC_LIBRARIES, k == 'T', false) ? r : r * RECIPROCAL(OVERSAMPLENR), ')');
@@ -4412,10 +4427,69 @@ void Temperature::isr() {
       // If wait_for_heatup is set, temperature was reached, no cancel
       if (wait_for_heatup) {
         wait_for_heatup = false;
-        #if ENABLED(DWIN_CREALITY_LCD)
-          hmiFlag.heat_flag = 0;
-          duration_t elapsed = print_job_timer.duration();  // Print timer
-          dwin_heat_time = elapsed.value;
+        //#if ENABLED(DWIN_CREALITY_LCD)
+          //hmiFlag.heat_flag = 0;
+          //duration_t elapsed = print_job_timer.duration();  // Print timer
+          //dwin_heat_time = elapsed.value;
+        
+        //Gorien
+        #ifdef RTS_AVAILABLE
+          #if 0
+          if(printingIsActive())
+          {
+            PrinterStatusKey[1] = 0;
+            InforShowStatus = true;
+            Update_Time_Value = RTS_UPDATE_VALUE;
+            if(LanguageRecbuf != 0)
+            {
+              // 2 for Printing...
+              rtscheck.RTS_SndData(2,IconPrintstatus);
+              delay(1);
+              // exchange to 11 page
+              rtscheck.RTS_SndData(ExchangePageBase + 11, ExchangepageAddr);
+              //切换节能图标
+              if(PrintMode)
+              {
+                rtscheck.RTS_SndData(7,IconPrintstatus+4);
+              }
+              else
+              {
+                rtscheck.RTS_SndData(8,IconPrintstatus+4);
+              }
+            }
+            else
+            {
+              rtscheck.RTS_SndData(2+CEIconGrap,IconPrintstatus);	
+              delay(1);
+              rtscheck.RTS_SndData(ExchangePageBase + 53, ExchangepageAddr); 
+              //切换节能图标
+              if(PrintMode)
+              {
+                rtscheck.RTS_SndData(9,IconPrintstatus+4);
+              }
+              else
+              {
+                rtscheck.RTS_SndData(10,IconPrintstatus+4);
+              }              
+            }
+            // open the key of checking card in printing
+            CardCheckStatus[0] = 1;
+            // begin to check filement status.
+            FilementStatus[1] = 1;
+          }
+          #endif
+
+          gLcdAutoUI.preheatFinishFlags.hotendHeat = true;
+          if(printingIsActive() && (gLcdAutoUI.AutoUIGetStatus() == DEVSTA_HEATING) && \
+            (gLcdAutoUI.preheatFinishFlags.bedHeat || !thermalManager.temp_bed.target))
+          {
+            memset(&gLcdAutoUI.preheatFinishFlags, 0, sizeof(gLcdAutoUI.preheatFinishFlags));
+            
+            gLcdAutoUI.SwitchBackgroundPic(AUTOUI_PRINTING);
+            /* change device status to 'DEVSTA_PRINTING' */
+            gLcdAutoUI.AutoUIToStatus(DEVSTA_PRINTING);
+            gLcdAutoUI.SetStaGoingHome(GO_HOME_IDLE);
+          }
         #else
           ui.reset_status();
         #endif
@@ -4552,7 +4626,58 @@ void Temperature::isr() {
       // If wait_for_heatup is set, temperature was reached, no cancel
       if (wait_for_heatup) {
         wait_for_heatup = false;
-        ui.reset_status();
+
+        //Gorien
+        #ifdef RTS_AVAILABLE
+          #if 0
+          if(PreheatStatus[1])
+          {
+            if(PrinterStatusKey[1] == 3)
+            {
+              PrinterStatusKey[1] = 0;
+              InforShowStatus = true;
+              Update_Time_Value = RTS_UPDATE_VALUE;
+              if(LanguageRecbuf != 0)
+              {
+                rtscheck.RTS_SndData(2,IconPrintstatus);
+                delay(1);
+                rtscheck.RTS_SndData(ExchangePageBase + 11, ExchangepageAddr);
+              }
+              else
+              {
+                rtscheck.RTS_SndData(2+CEIconGrap,IconPrintstatus);	
+                delay(1);
+                rtscheck.RTS_SndData(ExchangePageBase + 53, ExchangepageAddr); 
+              }
+
+              // open the key of  checking card in  printing
+              CardCheckStatus[0] = 1;
+              // begin to check filement status.
+              FilementStatus[1] = 1;
+            }
+            PreheatStatus[1] = PreheatStatus[0] = false;
+          }
+          else
+          {
+            PreheatStatus[0] = true;
+          }
+          #endif
+        
+        gLcdAutoUI.preheatFinishFlags.bedHeat = true;
+        if(printingIsActive() && (gLcdAutoUI.AutoUIGetStatus() == DEVSTA_HEATING) &&\
+           gLcdAutoUI.preheatFinishFlags.hotendHeat)
+        {
+          memset(&gLcdAutoUI.preheatFinishFlags, 0, sizeof(gLcdAutoUI.preheatFinishFlags));
+
+          gLcdAutoUI.SwitchBackgroundPic(AUTOUI_PRINTING);
+          /* change device status to 'DEVSTA_PRINTING' */
+          gLcdAutoUI.AutoUIToStatus(DEVSTA_PRINTING);
+          gLcdAutoUI.SetStaGoingHome(GO_HOME_IDLE);
+        }
+        #else
+          ui.reset_status();
+        #endif
+
         return true;
       }
 

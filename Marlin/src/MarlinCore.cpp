@@ -30,6 +30,12 @@
 
 #include "MarlinCore.h"
 
+//Gorien
+ //#ifdef RTS_AVAILABLE
+    #include "lcd/extui/sermoon_v1_creality/lcdAutoUI.h"
+    #include "lcd/extui/sermoon_v1_creality/sermoon_v1_rts.h"
+ //#endif
+
 #include "HAL/shared/Delay.h"
 #include "HAL/shared/esp_wifi.h"
 #include "HAL/shared/cpu_exception/exception_hook.h"
@@ -267,6 +273,9 @@ MarlinState marlin_state = MF_INITIALIZING;
 
 // For M109 and M190, this flag may be cleared (by M108) to exit the wait loop
 bool wait_for_heatup = true;
+
+//Gorien
+uint8_t flag_system_error = 0;
 
 // For M0/M1, this flag may be cleared (by M108) to exit the wait-for-user loop
 #if HAS_RESUME_CONTINUE
@@ -772,6 +781,12 @@ void idle(const bool no_stepper_sleep/*=false*/) {
   // Max7219 heartbeat, animation, etc
   TERN_(MAX7219_DEBUG, max7219.idle_tasks());
 
+  //Gorien
+  #ifdef RTS_AVAILABLE
+    // RTSUpdate();//screen data communication update
+    gLcdAutoUI.AutoUIMainProcess();
+  #endif
+
   // Return if setup() isn't completed
   if (marlin_state == MF_INITIALIZING) goto IDLE_DONE;
 
@@ -815,6 +830,8 @@ void idle(const bool no_stepper_sleep/*=false*/) {
 
   // Update the Beeper queue
   TERN_(HAS_BEEPER, buzzer.tick());
+
+
 
   // Handle UI input / draw events
   TERN(DWIN_CREALITY_LCD, dwinUpdate(), ui.update());
@@ -961,6 +978,39 @@ void stop() {
     safe_delay(350);       // allow enough time for messages to get out before stopping
     marlin_state = MF_STOPPED;
   }
+}
+
+//Gorien
+/**
+ * [TrySDCardPrintRecovery :Automatic recover if remove SD card at printing]
+ * @Author Creality
+ * @Time   2021-07-26
+ */
+void TrySDCardPrintRecovery(void)
+{
+    static uint32_t lMs = millis();
+
+    if((millis() - lMs) > 1)
+    {
+        lMs = millis();
+
+        if(gLcdAutoUI.cardReadErr.creAutoPauseFlag && (gLcdAutoUI.AutoUIGetStatus() == DEVSTA_PRINTING))
+        {
+            /* try SD card mount */
+            card.mount();
+
+            /* SD card mount success */
+            if(card.isMounted())
+            {
+                /* try to recovery print when automatic pause */
+                queue.inject_P(PSTR("M24"));
+
+                gLcdAutoUI.cardReadErr.creAutoPauseFlag = false;
+
+                SERIAL_ECHOLN("-----------------------------try to recovery print when automatic pause");
+            }
+        }
+    }
 }
 
 inline void tmc_standby_setup() {
@@ -1574,10 +1624,33 @@ void setup() {
     SETUP_RUN(mmu2.init());
   #endif
 
-  #if ENABLED(IIC_BL24CXX_EEPROM)
+
+  //Gorien
+  /*#if ENABLED(IIC_BL24CXX_EEPROM)
     BL24CXX::init();
     const uint8_t err = BL24CXX::check();
     SERIAL_ECHO_TERNARY(err, "BL24CXX Check ", "failed", "succeeded", "!\n");
+  #endif*/
+
+ 
+  #ifdef RTS_AVAILABLE
+    #if ENABLED(IIC_BL24CXX_EEPROM)
+      BL24CXX::init();
+      const uint8_t err = BL24CXX::check();
+      SERIAL_ECHO_TERNARY(err, "BL24CXX Check ", "failed", "succeeded", "!\n");
+    #endif
+
+    #if ENABLED(POWER_LOSS_RECOVERY)
+      //if check the SD card insert ,
+      if(IS_SD_INSERTED()) recovery.check();
+
+      //set Filement check PIN
+      SET_INPUT(CHECK_MATWEIAL);
+      delay(1000);
+      // rtscheck.RTS_Init();//int screen 
+      // rtscheck.RTS_Init();
+      // RTSSHOW::RTS_Init();
+    #endif
   #endif
 
   #if HAS_DWIN_E3V2_BASIC
@@ -1635,6 +1708,19 @@ void setup() {
     SETUP_RUN(fxdTiCtrl.init());
   #endif
 
+  //Gorien
+  #ifdef LED_CONTROL_PIN
+    OUT_WRITE(LED_CONTROL_PIN, 0);
+  #endif
+
+  #ifdef BOX_FAN_PIN
+    OUT_WRITE(BOX_FAN_PIN, LOW);  //HIGH
+  #endif
+
+  #if ENABLE_DOOR_OPEN_CHECK
+    SET_INPUT(CHECK_DOOR_PIN);
+  #endif
+
   marlin_state = MF_RUNNING;
 
   #ifdef STARTUP_TUNE
@@ -1663,6 +1749,37 @@ void setup() {
  */
 void loop() {
   do {
+
+      //Gorien
+    #if 1
+    if(flag_system_error) 
+    {
+      /* disable all heater */
+      thermalManager.disable_all_heaters();
+
+      if(flag_system_error == 3 || flag_system_error == 4)
+      {
+        gLcdAutoUI.SwitchBackgroundPic(AUTOUI_ERRORPW);
+        gLcdAutoUI.DisplayText((char*)ERR_6, TEXTVAR_ADDR_ERR_TIPS);
+      }
+      else if(flag_system_error == 2)
+      {
+        gLcdAutoUI.SwitchBackgroundPic(AUTOUI_ERRORPW);
+        gLcdAutoUI.DisplayText((char*)ERR_7, TEXTVAR_ADDR_ERR_TIPS);
+      }
+      else
+      {
+        gLcdAutoUI.SwitchBackgroundPic(AUTOUI_ERRORPW);
+        gLcdAutoUI.DisplayText((char*)ERR_8, TEXTVAR_ADDR_ERR_TIPS);
+      }
+      
+      delay(10);
+      cli();
+
+      for(;;) hal.watchdog_refresh();
+    }
+    #endif
+
     idle();
 
     #if HAS_MEDIA

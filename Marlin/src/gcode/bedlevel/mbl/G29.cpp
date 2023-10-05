@@ -38,6 +38,12 @@
 #include "../../../module/motion.h"
 #include "../../../module/planner.h"
 
+//Gorien
+ //#ifdef RTS_AVAILABLE
+    #include "../../../lcd/extui/sermoon_v1_creality/lcdAutoUI.h"
+    #include "../../../lcd/extui/sermoon_v1_creality/sermoon_v1_rts.h"
+ //#endif
+
 #if ENABLED(EXTENSIBLE_UI)
   #include "../../../lcd/extui/ui_api.h"
 #elif ENABLED(DWIN_LCD_PROUI)
@@ -100,9 +106,14 @@ void GcodeSuite::G29() {
       break;
 
     case MeshStart:
-      bedlevel.reset();
+      //bedlevel.reset();
       mbl_probe_index = 0;
-      if (!ui.wait_for_move) {
+      if (!ui.wait_for_move) 
+      {
+        #ifdef RTS_AVAILABLE
+          queue.inject_P(PSTR("G28"));
+        #else
+
         if (parser.seen_test('N'))
           queue.inject(F("G28" TERN_(CAN_SET_LEVELING_AFTER_G28, "L0")));
 
@@ -141,6 +152,7 @@ void GcodeSuite::G29() {
         #endif // HAS_SAFE_BED_LEVELING
 
         queue.inject(F("G29S2"));
+        #endif
 
         TERN_(EXTENSIBLE_UI, ExtUI::onLevelingStart());
         TERN_(DWIN_LCD_PROUI, dwinLevelingStart());
@@ -171,6 +183,7 @@ void GcodeSuite::G29() {
         TERN_(EXTENSIBLE_UI, ExtUI::onMeshUpdate(ix, iy, current_position.z));
         TERN_(DWIN_LCD_PROUI, dwinMeshUpdate(_MIN(mbl_probe_index, GRID_MAX_POINTS), int(GRID_MAX_POINTS), current_position.z));
         SET_SOFT_ENDSTOP_LOOSE(false);
+        settings.save();
       }
       // If there's another point to sample, move there with optional lift.
       if (mbl_probe_index < GRID_MAX_POINTS) {
@@ -198,7 +211,8 @@ void GcodeSuite::G29() {
         TERN_(HAS_STATUS_MESSAGE, LCD_MESSAGE(MSG_MESH_DONE));
         OKAY_BUZZ();
 
-        home_all_axes();
+        //home_all_axes();
+        do_blocking_move_to_xy((X_MANUAL_LEVEL_SIZE / 2), (Y_MANUAL_LEVEL_SIZE / 2)); 
         set_bed_leveling_enabled(true);
 
         #if ENABLED(MESH_G28_REST_ORIGIN)

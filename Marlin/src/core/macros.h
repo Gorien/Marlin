@@ -749,5 +749,7 @@
 #define _UI_RELOADED    105
 #define _UI_IA_CREALITY 106
 #define _UI_E3S1PRO     107
+//Gorien
+#define _UI_SERMOON_V1_CREALITY 108
 #define _DGUS_UI_IS(N) || (CAT(_UI_, DGUS_LCD_UI) == CAT(_UI_, N))
 #define DGUS_UI_IS(V...) (0 MAP(_DGUS_UI_IS, V))

@@ -56,6 +56,12 @@
 #include "../gcode/gcode.h"
 #include "../MarlinCore.h"
 
+//Gorien
+ //#ifdef RTS_AVAILABLE
+    #include "../lcd/extui/sermoon_v1_creality/lcdAutoUI.h"
+    #include "../lcd/extui/sermoon_v1_creality/sermoon_v1_rts.h"
+ //#endif
+
 #if ANY(EEPROM_SETTINGS, SD_FIRMWARE_UPDATE)
   #include "../HAL/shared/eeprom_api.h"
 #endif
@@ -2809,10 +2815,14 @@ void MarlinSettings::postprocess() {
       const uint16_t eeprom_total = eeprom_index - (EEPROM_OFFSET);
       if ((eeprom_error = size_error(eeprom_total))) {
         // Handle below and on return
+        gLcdAutoUI.SwitchBackgroundPic(AUTOUI_ERRORPW);
+        gLcdAutoUI.DisplayText((char*)ERR_4, TEXTVAR_ADDR_ERR_TIPS);
         break;
       }
       else if (working_crc != stored_crc) {
         eeprom_error = ERR_EEPROM_CRC;
+         gLcdAutoUI.SwitchBackgroundPic(AUTOUI_ERRORPW);
+        gLcdAutoUI.DisplayText((char*)ERR_5, TEXTVAR_ADDR_ERR_TIPS);
         break;
       }
       else if (!validating) {

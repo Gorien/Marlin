@@ -32,6 +32,12 @@ GcodeSuite gcode;
   extern bool wifi_custom_command(char * const command_ptr);
 #endif
 
+  //Gorien
+ //#ifdef RTS_AVAILABLE
+    #include "../lcd/extui/sermoon_v1_creality/lcdAutoUI.h"
+    #include "../lcd/extui/sermoon_v1_creality/sermoon_v1_rts.h"
+ //#endif
+
 #include "parser.h"
 #include "queue.h"
 #include "../module/motion.h"
@@ -548,6 +554,11 @@ void GcodeSuite::process_parsed_command(const bool no_ok/*=false*/) {
         case 48: M48(); break;                                    // M48: Z probe repeatability test
       #endif
 
+      //Gorien
+      #if WIFI_BOARD_SUPPORT
+        case 72:  M72();  break;                                  // M72: WIFI Board Request
+      #endif
+
       #if ENABLED(SET_PROGRESS_MANUALLY)
         case 73: M73(); break;                                    // M73: Set progress percentage
       #endif
@@ -559,6 +570,11 @@ void GcodeSuite::process_parsed_command(const bool no_ok/*=false*/) {
       #if ENABLED(PRINTCOUNTER)
         case 78: M78(); break;                                    // M78: Show print statistics
       #endif
+
+      //Gorien
+      #if WIFI_BOARD_SUPPORT
+        case 79:  M79();  break;                                  // M79: WIFI Board Request
+      #endif      
 
       #if ENABLED(M100_FREE_MEMORY_WATCHER)
         case 100: M100(); break;                                  // M100: Free Memory Report
@@ -1059,9 +1075,10 @@ void GcodeSuite::process_parsed_command(const bool no_ok/*=false*/) {
         case 422: M422(); break;                                  // M422: Set Z Stepper automatic alignment position using probe
       #endif
 
-      #if ENABLED(OTA_FIRMWARE_UPDATE)
-        case 936: M936(); break;                                  // M936: OTA update firmware.
-      #endif
+      //Gorien
+      //#if ENABLED(OTA_FIRMWARE_UPDATE)
+      //  case 936: M936(); break;                                  // M936: OTA update firmware.
+      //#endif
 
       #if SPI_FLASH_BACKUP
         case 993: M993(); break;                                  // M993: Backup SPI Flash to SD
@@ -1103,6 +1120,11 @@ void GcodeSuite::process_parsed_command(const bool no_ok/*=false*/) {
         case 3426: M3426(); break;                                // M3426: Read MCP3426 ADC (over i2c)
       #endif
 
+      //Gorien
+      #if ENABLE_OTA
+        case 936:  M936();  break;                                // M936: OTA Upgrade Request
+      #endif
+
       default: parser.unknown_command_warning(); break;
     }
     break;
@@ -1123,6 +1145,8 @@ void GcodeSuite::process_parsed_command(const bool no_ok/*=false*/) {
       #endif
       parser.unknown_command_warning();
   }
+
+  if(gLcdAutoUI.GetNoMatWhenAppPrintFlag() || gLcdAutoUI.GetDoorOpenWhenAppPrintFlag()) return;
 
   if (!no_ok) queue.ok_to_send();
 

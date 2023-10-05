@@ -38,6 +38,12 @@
   #include "../lcd/e3v2/proui/dwin.h"
 #endif
 
+//Gorien
+ //#ifdef RTS_AVAILABLE
+    #include "../lcd/extui/sermoon_v1_creality/lcdAutoUI.h"
+    #include "../lcd/extui/sermoon_v1_creality/sermoon_v1_rts.h"
+ //#endif
+
 #include "../module/planner.h"        // for synchronize
 #include "../module/printcounter.h"
 #include "../gcode/queue.h"
@@ -518,6 +524,10 @@ void CardReader::manage_media() {
   static uint8_t prev_stat = 2;     // At boot we don't know if media is present or not
   uint8_t stat = uint8_t(IS_SD_INSERTED());
   if (stat == prev_stat) return;    // Already checked and still no change?
+
+  //Gorien
+  /* do not mount sd card at app printing */
+  if((gLcdAutoUI.AutoUIGetStatus() >= DEVSTA_APP_PRINTING) && (gLcdAutoUI.AutoUIGetStatus() < DEVSTA_NUM)) return;
 
   DEBUG_SECTION(cmm, "CardReader::manage_media()", true);
   DEBUG_ECHOLNPGM("Media present: ", prev_stat, " -> ", stat);

@@ -37,6 +37,12 @@ GCodeQueue queue;
 #include "../MarlinCore.h"
 #include "../core/bug_on.h"
 
+//Gorien
+ //#ifdef RTS_AVAILABLE
+    #include "../lcd/extui/sermoon_v1_creality/lcdAutoUI.h"
+    #include "../lcd/extui/sermoon_v1_creality/sermoon_v1_rts.h"
+ //#endif
+
 #if ENABLED(PRINTER_EVENT_LEDS)
   #include "../feature/leds/printer_event_leds.h"
 #endif
@@ -461,6 +467,8 @@ void GCodeQueue::get_serial_commands() {
         SERIAL_FLUSH();
         continue;
       }
+      else if(gLcdAutoUI.GetNoMatWhenAppPrintFlag() || gLcdAutoUI.GetDoorOpenWhenAppPrintFlag()) continue;
+
 
       const char serial_char = (char)c;
       SerialState &serial = serial_state[p];
@@ -577,10 +585,63 @@ void GCodeQueue::get_serial_commands() {
     if (!IS_SD_FETCHING()) return;
 
     int sd_count = 0;
-    while (!ring_buffer.full() && !card.eof()) {
-      const int16_t n = card.get();
+    while (!ring_buffer.full() && !card.eof() && !gLcdAutoUI.cardReadErr.creAutoPauseFlag) {
+      int16_t n = card.get();
       const bool card_eof = card.eof();
-      if (n < 0 && !card_eof) { SERIAL_ERROR_MSG(STR_SD_ERR_READ); continue; }
+      if (n < 0 && !card_eof) { 
+        SERIAL_ERROR_MSG(STR_SD_ERR_READ); 
+        
+        //Gorien
+        /* try to read card again */
+        gLcdAutoUI.cardReadErr.creTick = millis();
+        while(1)
+          {
+                /* no more than 4s */
+                if(millis() - gLcdAutoUI.cardReadErr.creTick >= 500)
+                {
+                    gLcdAutoUI.cardReadErr.creTick = millis();
+                    /* feed watchdog */
+                    hal.watchdog_refresh();
+
+                    gLcdAutoUI.cardReadErr.creCnt ++;
+
+                    n = card.get();
+
+                    if(n >= 0) 
+                    {
+                        gLcdAutoUI.cardReadErr.creCnt = 0;
+                        break;
+                    }
+                    else SERIAL_ERROR_MSG(" ------------------------------------try fail");
+                }
+                else
+                {
+                    if(gLcdAutoUI.cardReadErr.creCnt >= 4)
+                    {
+                        /* automatic pause */
+                        gLcdAutoUI.cardReadErr.creAutoPauseFlag = true;
+
+                        /* remove file that record information print-job recovery */
+                        #if 0
+                          #if ENABLED(SDSUPPORT) && ENABLED(POWER_LOSS_RECOVERY)
+                            card.removeJobRecoveryFile();
+                          #endif
+                        gLcdAutoUI.SwitchBackgroundPic(AUTOUI_ERRORPW);
+                        gLcdAutoUI.DisplayText((char*)ERR_3, TEXTVAR_ADDR_ERR_TIPS);
+                        #endif
+
+                        queue.inject_P(PSTR("M25"));
+                        SERIAL_ERROR_MSG(" ------------------------------------automatic pause");
+                        gLcdAutoUI.cardReadErr.creCnt = 0;
+
+                        return;
+                    }
+                }
+            }
+        
+        continue;
+      
+      }
 
       CommandLine &command = ring_buffer.commands[ring_buffer.index_w];
       const char sd_char = (char)n;
@@ -592,14 +653,14 @@ void GCodeQueue::get_serial_commands() {
         if (!process_line_done(sd_input_state, command.buffer, sd_count)) {
 
           // M808 L saves the sdpos of the next line. M808 loops to a new sdpos.
-          TERN_(GCODE_REPEAT_MARKERS, repeat.early_parse_M808(command.buffer));
+          //TERN_(GCODE_REPEAT_MARKERS, repeat.early_parse_M808(command.buffer));
 
-          #if DISABLED(PARK_HEAD_ON_PAUSE)
+          //#if DISABLED(PARK_HEAD_ON_PAUSE)
             // When M25 is non-blocking it can still suspend SD commands
             // Otherwise the M125 handler needs to know SD printing is active
-            if (command.buffer[0] == 'M' && command.buffer[1] == '2' && command.buffer[2] == '5' && !NUMERIC(command.buffer[3]))
-              card.pauseSDPrint();
-          #endif
+            //if (command.buffer[0] == 'M' && command.buffer[1] == '2' && command.buffer[2] == '5' && !NUMERIC(command.buffer[3]))
+              //card.pauseSDPrint();
+          //#endif
 
           // Put the new command into the buffer (no "ok" sent)
           ring_buffer.commit_command(true);
@@ -612,6 +673,12 @@ void GCodeQueue::get_serial_commands() {
       }
       else
         process_stream_char(sd_char, sd_input_state, command.buffer, sd_count);
+
+      if (card_eof) {
+        #ifdef RTS_AVAILABLE
+          gLcdAutoUI.SetPrintFinishFlag(true);
+        #endif            
+      }
     }
   }
 

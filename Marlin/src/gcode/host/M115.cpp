@@ -24,6 +24,12 @@
 #include "../../inc/MarlinConfig.h"
 #include "../queue.h"           // for getting the command port
 
+//Gorien
+ //#ifdef RTS_AVAILABLE
+    #include "../../lcd/extui/sermoon_v1_creality/lcdAutoUI.h"
+    #include "../../lcd/extui/sermoon_v1_creality/sermoon_v1_rts.h"
+ //#endif
+
 #if ENABLED(M115_GEOMETRY_REPORT)
   #include "../../module/motion.h"
 #endif
@@ -59,7 +65,10 @@
  *       at https://reprap.org/wiki/Firmware_Capabilities_Protocol
  */
 void GcodeSuite::M115() {
-  SERIAL_ECHOPGM("FIRMWARE_NAME:Marlin"
+
+  //Gorien
+  if(gLcdAutoUI.enableSwitches.swiWifiLed) {
+    SERIAL_ECHOPGM("FIRMWARE_NAME:Marlin"
     " " DETAILED_BUILD_VERSION " (" __DATE__ " " __TIME__ ")"
     " SOURCE_CODE_URL:" SOURCE_CODE_URL
     " PROTOCOL_VERSION:" PROTOCOL_VERSION
@@ -71,7 +80,25 @@ void GcodeSuite::M115() {
     #ifdef MACHINE_UUID
       " UUID:" MACHINE_UUID
     #endif
+    " Cap:WIFI:" STRINGIFY(1)
   );
+  }
+  else {
+    SERIAL_ECHOPGM("FIRMWARE_NAME:Marlin"
+    " " DETAILED_BUILD_VERSION " (" __DATE__ " " __TIME__ ")"
+    " SOURCE_CODE_URL:" SOURCE_CODE_URL
+    " PROTOCOL_VERSION:" PROTOCOL_VERSION
+    " MACHINE_TYPE:" MACHINE_NAME
+    " EXTRUDER_COUNT:" STRINGIFY(EXTRUDERS)
+    #if NUM_AXES != XYZ
+      " AXIS_COUNT:" STRINGIFY(NUM_AXES)
+    #endif
+    #ifdef MACHINE_UUID
+      " UUID:" MACHINE_UUID
+    #endif
+    " Cap:WIFI:" STRINGIFY(0)
+  );
+  }
 
   // STM32UID:111122223333
   #if ENABLED(HAS_STM32_UID) && !defined(MACHINE_UUID)

@@ -111,6 +111,10 @@ extern feedRate_t feedrate_mm_s;
 extern int16_t feedrate_percentage;
 #define MMS_SCALED(V) ((V) * 0.01f * feedrate_percentage)
 
+//Gorien
+extern float saved_feedrate_mm_s;
+extern int16_t saved_feedrate_percentage;
+
 // The active extruder (tool). Set with T<extruder> command.
 #if HAS_MULTI_EXTRUDER
   extern uint8_t active_extruder;

@@ -76,7 +76,7 @@
 #ifndef NO_AUTO_ASSIGN_WARNING
 
   #if AUTO_ASSIGNED_LCD_SERIAL
-    #warning "Note: Auto-assigned LCD_SERIAL_PORT. (Define NO_AUTO_ASSIGN_WARNING to suppress this warning.)"
+    //#warning "Note: Auto-assigned LCD_SERIAL_PORT. (Define NO_AUTO_ASSIGN_WARNING to suppress this warning.)"
   #endif
 
   #if AUTO_ASSIGNED_X2_STEPPER

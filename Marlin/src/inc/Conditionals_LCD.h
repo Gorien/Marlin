@@ -55,6 +55,8 @@
   #define DGUS_LCD_UI_IA_CREALITY 1
 #elif DGUS_UI_IS(E3S1PRO)
   #define DGUS_LCD_UI_E3S1PRO 1
+#elif DGUS_UI_IS(SERMOON_V1_CREALITY)
+  #define DGUS_LCD_UI_SERMOON_V1_CREALITY 1
 #endif
 
 /**
@@ -490,7 +492,7 @@
 
 // Extensible UI serial touch screens. (See src/lcd/extui)
 #if ANY(HAS_DGUS_LCD, MALYAN_LCD, ANYCUBIC_LCD_I3MEGA, ANYCUBIC_LCD_CHIRON, NEXTION_TFT, TOUCH_UI_FTDI_EVE)
-  #define IS_EXTUI 1 // Just for sanity check.
+  #define IS_EXTUI 1
   #define EXTENSIBLE_UI
 #endif
 

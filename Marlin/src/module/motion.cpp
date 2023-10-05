@@ -825,8 +825,13 @@ void do_blocking_move_to(const xyze_pos_t &raw, const_feedRate_t fr_mm_s/*=0.0f*
 // Prepare to do endstop or probe moves with custom feedrates.
 //  - Save / restore current feedrate and multiplier
 //
-static float saved_feedrate_mm_s;
-static int16_t saved_feedrate_percentage;
+
+//Gorien
+float saved_feedrate_mm_s;
+int16_t saved_feedrate_percentage;
+//static float saved_feedrate_mm_s;
+//static int16_t saved_feedrate_percentage;
+
 void remember_feedrate_scaling_off() {
   if (DEBUGGING(LEVELING)) DEBUG_ECHOLNPGM("remember_feedrate_scaling_off: fr=", feedrate_mm_s, " ", feedrate_percentage, "%");
   saved_feedrate_mm_s = feedrate_mm_s;

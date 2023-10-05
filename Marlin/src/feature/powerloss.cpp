@@ -35,6 +35,11 @@
   #include "../lcd/extui/ui_api.h"
 #endif
 
+
+#ifdef RTS_AVAILABLE
+    #include "../lcd/extui/sermoon_v1_creality/lcdAutoUI.h"
+#endif
+
 bool PrintJobRecovery::enabled; // Initialized by settings.load()
 
 MediaFile PrintJobRecovery::file;
@@ -167,6 +172,9 @@ void PrintJobRecovery::prepare() {
  */
 void PrintJobRecovery::save(const bool force/*=false*/, const float zraise/*=POWER_LOSS_ZRAISE*/, const bool raised/*=false*/) {
 
+  //Gorien
+  if(gLcdAutoUI.AutoUIGetStatus() != DEVSTA_PRINTING) return;
+  
   // We don't check IS_SD_PRINTING here so a save may occur during a pause
 
   #if SAVE_INFO_INTERVAL_MS > 0

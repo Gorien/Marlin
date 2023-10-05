@@ -56,6 +56,12 @@
   #include "../../lcd/e3v2/proui/dwin.h"
 #endif
 
+//Gorien
+ //#ifdef RTS_AVAILABLE
+    #include "../../lcd/extui/sermoon_v1_creality/lcdAutoUI.h"
+    #include "../../lcd/extui/sermoon_v1_creality/sermoon_v1_rts.h"
+ //#endif
+
 #if ENABLED(LASER_FEATURE)
   #include "../../feature/spindle_laser.h"
 #endif
@@ -194,6 +200,8 @@
 void GcodeSuite::G28() {
   DEBUG_SECTION(log_G28, "G28", DEBUGGING(LEVELING));
   if (DEBUGGING(LEVELING)) log_machine_info();
+
+  gLcdAutoUI.SetStaGoingHome(GO_HOME_DOING);
 
   #if ENABLED(MARLIN_DEV_MODE)
     if (parser.seen_test('S')) {
@@ -631,7 +639,9 @@ void GcodeSuite::G28() {
       if (finalRaiseZ) do_move_after_z_homing();
     #endif
 
-    TERN_(CAN_SET_LEVELING_AFTER_G28, if (leveling_restore_state) set_bed_leveling_enabled());
+    //Gorien
+    //TERN_(CAN_SET_LEVELING_AFTER_G28, if (leveling_restore_state) set_bed_leveling_enabled());
+    set_bed_leveling_enabled(true);
 
     // Restore the active tool after homing
     #if HAS_MULTI_HOTEND && (DISABLED(DELTA) || ENABLED(DELTA_HOME_TO_SAFE_ZONE))
@@ -653,5 +663,9 @@ void GcodeSuite::G28() {
   report_current_position();
 
   TERN_(FULL_REPORT_TO_HOST_FEATURE, set_and_report_grblstate(old_grblstate));
+
+  gLcdAutoUI.SetStaGoingHome(GO_HOME_DONE);
+
+  if(!gLcdAutoUI.GetHaGoHoBeFlag()) gLcdAutoUI.SetHaGoHoBeFlag(true);
 
 }
