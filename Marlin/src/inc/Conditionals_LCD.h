@@ -55,6 +55,8 @@
   #define DGUS_LCD_UI_IA_CREALITY 1
 #elif DGUS_UI_IS(E3S1PRO)
   #define DGUS_LCD_UI_E3S1PRO 1
+#elif DGUS_UI_IS(SERMOON_V1)
+  #define DGUS_LCD_UI_SERMOON_V1 1
 #endif
 
 /**

@@ -806,6 +806,8 @@
   #include "stm32f4/pins_I3DBEEZ9.h"                // STM32F4                              env:I3DBEEZ9_V1
 #elif MB(MELLOW_FLY_E3_V2)
   #include "stm32f4/pins_MELLOW_FLY_E3_V2.h"        // STM32F4                              env:FLY_E3_V2
+#elif MB(CREALITY_SERMOON_V1)
+  #include "stm32f4/pins_CREALITY_SERMOON_V1.h"     // STM32F4                              env:STM32F401RC_creality
 
 //
 // ARM Cortex-M7
