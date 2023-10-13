@@ -351,7 +351,7 @@ bool printJobOngoing() { return print_job_timer.isRunning() || IS_SD_PRINTING();
 /**
  * Printing is active when a job is underway but not paused
  */
-bool printingIsActive() { return !did_pause_print && printJobOngoing(); }
+bool printingIsActive() { return /*!did_pause_print && */printJobOngoing(); }
 
 /**
  * Printing is paused according to SD or host indicators
@@ -381,7 +381,7 @@ void startOrResumeJob() {
 
     print_job_timer.abort();
 
-    IF_DISABLED(SD_ABORT_NO_COOLDOWN, thermalManager.disable_all_heaters());
+    //IF_DISABLED(SD_ABORT_NO_COOLDOWN, thermalManager.disable_all_heaters());
 
     TERN(HAS_CUTTER, cutter.kill(), thermalManager.zero_fan_speeds()); // Full cutter shutdown including ISR control
 
@@ -390,7 +390,7 @@ void startOrResumeJob() {
     TERN_(POWER_LOSS_RECOVERY, recovery.purge());
 
     #ifdef EVENT_GCODE_SD_ABORT
-      queue.inject(F(EVENT_GCODE_SD_ABORT));
+      //queue.inject(F(EVENT_GCODE_SD_ABORT));
     #endif
 
     TERN_(PASSWORD_AFTER_SD_PRINT_ABORT, password.lock_machine());
@@ -834,7 +834,7 @@ void idle(const bool no_stepper_sleep/*=false*/) {
 
 
   // Handle UI input / draw events
-  TERN(DWIN_CREALITY_LCD, dwinUpdate(), ui.update());
+  //TERN(DWIN_CREALITY_LCD, dwinUpdate(), ui.update());
 
   // Run i2c Position Encoders
   #if ENABLED(I2C_POSITION_ENCODERS)
@@ -894,7 +894,7 @@ void idle(const bool no_stepper_sleep/*=false*/) {
 void kill(FSTR_P const lcd_error/*=nullptr*/, FSTR_P const lcd_component/*=nullptr*/, const bool steppers_off/*=false*/) {
   thermalManager.disable_all_heaters();
 
-  TERN_(HAS_CUTTER, cutter.kill()); // Full cutter shutdown including ISR control
+  //TERN_(HAS_CUTTER, cutter.kill()); // Full cutter shutdown including ISR control
 
   // Echo the LCD message to serial for extra context
   if (lcd_error) { SERIAL_ECHO_START(); SERIAL_ECHOLN(lcd_error); }
@@ -920,17 +920,17 @@ void kill(FSTR_P const lcd_error/*=nullptr*/, FSTR_P const lcd_component/*=nullp
 void minkill(const bool steppers_off/*=false*/) {
 
   // Wait a short time (allows messages to get out before shutting down.
-  for (int i = 1000; i--;) DELAY_US(600);
+  //for (int i = 1000; i--;) DELAY_US(600);
 
-  cli(); // Stop interrupts
+  //cli(); // Stop interrupts
 
   // Wait to ensure all interrupts stopped
-  for (int i = 1000; i--;) DELAY_US(250);
+  //for (int i = 1000; i--;) DELAY_US(250);
 
   // Reiterate heaters off
   thermalManager.disable_all_heaters();
 
-  TERN_(HAS_CUTTER, cutter.kill());  // Reiterate cutter shutdown
+  //TERN_(HAS_CUTTER, cutter.kill());  // Reiterate cutter shutdown
 
   // Power off all steppers (for M112) or just the E steppers
   steppers_off ? stepper.disable_all_steppers() : stepper.disable_e_steppers();
@@ -954,7 +954,7 @@ void minkill(const bool steppers_off/*=false*/) {
 
   #else
 
-    for (;;) hal.watchdog_refresh();  // Wait for RESET button or power-cycle
+    //for (;;) hal.watchdog_refresh();  // Wait for RESET button or power-cycle
 
   #endif
 }
