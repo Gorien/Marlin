@@ -24,6 +24,7 @@
 #if ENABLED(DGUS_LCD_UI_SERMOON_V1)
 
 #include "../ui_api.h"
+#include "lcdAutoUI.h"
 
 // To implement a new UI, complete the functions below and
 // read or update Marlin's state using the methods in the
@@ -45,7 +46,7 @@ namespace ExtUI {
      *   READ(pin)
      */
   }
-  void onIdle() {}
+  void onIdle() {gLcdAutoUI.AutoUIMainProcess();}
   void onPrinterKilled(FSTR_P const error, FSTR_P const component) {}
   void onMediaInserted() {}
   void onMediaError() {}
@@ -58,8 +59,13 @@ namespace ExtUI {
   void onUserConfirmRequired(const char * const msg) {}
   void onStatusChanged(const char * const msg) {}
 
-  void onHomingStart() {}
-  void onHomingDone() {}
+  void onHomingStart() {gLcdAutoUI.SetStaGoingHome(GO_HOME_DOING);}
+  void onHomingDone() 
+  {
+    gLcdAutoUI.SetStaGoingHome(GO_HOME_DONE);
+    if(!gLcdAutoUI.GetHaGoHoBeFlag())
+    gLcdAutoUI.SetHaGoHoBeFlag(true);
+  }
   void onPrintDone() {}
 
   void onFactoryReset() {}

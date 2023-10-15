@@ -604,10 +604,10 @@ void RTSSHOW::RTS_Init()
 
 int RTSSHOW::RTS_RecData()
 {
-  while(MYSERIAL1.available() > 0 && (recnum < SizeofDatabuf))
+  while(LCD_SERIAL.available() > 0 && (recnum < SizeofDatabuf))
   {
     delay(1);
-    databuf[recnum] = MYSERIAL1.read();
+    databuf[recnum] = LCD_SERIAL.read();
 
     if(databuf[0] == FHONE)
     {
@@ -700,8 +700,8 @@ int RTSSHOW::RTS_RecData()
 //   static unsigned char databuf[16];
 
 //   // 解析数据帧
-//   if (MYSERIAL1.available() > 0 && recvnum < (signed)sizeof(databuf)) {
-//     databuf[recvnum++] = MYSERIAL1.read();
+//   if (LCD_SERIAL.available() > 0 && recvnum < (signed)sizeof(databuf)) {
+//     databuf[recvnum++] = LCD_SERIAL.read();
 
 //     #define RECV_DEBUG
 //     #if defined(RECV_DEBUG)
@@ -814,11 +814,11 @@ void RTSSHOW::RTS_SndData(void)
     }
     for(int i = 0;i < (snddat.len + 3);i ++)
     {
-      MYSERIAL1.write(databuf[i]);
+      LCD_SERIAL.write(databuf[i]);
       delayMicroseconds(1);
     }
-    // usart_tx(MYSERIAL1.c_dev(), databuf, snddat.len + 3);
-    // MYSERIAL1.flush();
+    // usart_tx(LCD_SERIAL.c_dev(), databuf, snddat.len + 3);
+    // LCD_SERIAL.flush();
 
     memset(&snddat, 0, sizeof(snddat));
     memset(databuf, 0, sizeof(databuf));
@@ -854,7 +854,7 @@ void RTSSHOW::RTS_SndData(const char *str, unsigned long addr, unsigned char cmd
 
     for(int i = 0;i < (len + 6);i ++)
     {
-      MYSERIAL1.write(databuf[i]);
+      LCD_SERIAL.write(databuf[i]);
       delayMicroseconds(1);
     }
     memset(databuf, 0, sizeof(databuf));
@@ -970,11 +970,11 @@ void RTSSHOW::RTS_Backlight(unsigned short light/* = Var_light*/, unsigned short
     Backlight_buf[9] = time & 0xFF;
   }
 
-  // usart_tx(MYSERIAL1.c_dev(), Backlight_buf, 10);
-  // MYSERIAL1.flush();
+  // usart_tx(LCD_SERIAL.c_dev(), Backlight_buf, 10);
+  // LCD_SERIAL.flush();
   for(int i = 0; i < 10; i ++)
   {
-    MYSERIAL1.write(Backlight_buf[i]);
+    LCD_SERIAL.write(Backlight_buf[i]);
     delayMicroseconds(1);
   }
 }

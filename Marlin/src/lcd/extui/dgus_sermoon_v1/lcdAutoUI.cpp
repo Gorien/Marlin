@@ -9,9 +9,9 @@
 
 #if ENABLED(DGUS_LCD_UI_SERMOON_V1)
 
-#include <stdio.h>
-#include <arduino.h>
-#include <wstring.h>
+//#include <stdio.h>
+//#include <arduino.h>
+//#include <wstring.h>
 #include "lcdAutoUI.h"
 #include "LCD_RTS.h"
 #include "../../../inc/MarlinConfig.h"
@@ -4127,6 +4127,20 @@ void LcdAutoUIStruct_t::AutoUIAppManPauRecovey(void)
  */
 void LcdAutoUIStruct_t::AutoUIInit(void)
 {
+    LCD_SERIAL.begin(LCD_BAUDRATE);
+
+    #ifdef LED_CONTROL_PIN
+        OUT_WRITE(LED_CONTROL_PIN, 0);
+    #endif
+
+    #ifdef BOX_FAN_PIN
+        OUT_WRITE(BOX_FAN_PIN, LOW);  //HIGH
+    #endif
+
+    #if ENABLE_DOOR_OPEN_CHECK
+        SET_INPUT(CHECK_DOOR_PIN);
+    #endif
+
     GetCurLangFromEEPROM();
 
     GetStaFirTimFlagFromEEPROM();
@@ -4609,6 +4623,8 @@ void LcdAutoUIStruct_t::AutoUIBedCaliFlow(void)
     /* true:have switched background picture, false: have not */
     static bool lSwiBackgroundPicFlag = false;
 
+    SERIAL_ECHOLN(flowStepCnt.fscBedCali);
+
     switch(flowStepCnt.fscBedCali)
     {
         case 0:
@@ -4639,18 +4655,19 @@ void LcdAutoUIStruct_t::AutoUIBedCaliFlow(void)
             /* set go-home status - 'GO_HOME_IDLE' */
             SetStaGoingHome(GO_HOME_IDLE);
             /* start bed calibration */
-            queue.inject_P(PSTR("G29 S1"));
-
+            
             LcdAutoUISetBedLeveling(false);
-
             flowStepCnt.fscBedCali ++;
+            queue.inject_P(PSTR("G29 S1"));
 
             break;
 
         case 1:
             /* wait for going home */
+            SERIAL_ECHOLNPGM("wait going home");
             if(goHomeSta == GO_HOME_DONE)
             {
+                SERIAL_ECHOLNPGM("going home done");
                 /* set go-home status - 'GO_HOME_IDLE' */
                 SetStaGoingHome(GO_HOME_IDLE);
                 /* get to the center(x, y), block */
@@ -4919,6 +4936,8 @@ void LcdAutoUIStruct_t::AutoUIMainProcess(void)
     AutoUIDoorOpenAppPrintProcess();
     /* delay to change device status */
     AutoUIDelayToStatus(devStaCon.dscDevStaRecord);
+
+    //SERIAL_ECHOLN(devStatus);
 
     switch(devStatus)
     {
