@@ -387,8 +387,8 @@ void LcdAutoUISetFeedrate(int16_t _feedrate)
     feedrate_percentage = _feedrate;
 
     //这两个备份值也同步赋值，使得在“执行G28期间修改速率不生效”问题解决
-    saved_feedrate_mm_s = _feedrate;
-    saved_feedrate_percentage = _feedrate;
+    //saved_feedrate_mm_s = _feedrate;
+    //saved_feedrate_percentage = _feedrate;
     /* updata printting feedate */
     gLcdAutoUI.DisplayData(feedrate_percentage, DATAVAR_ADDR_FEEDRARE);
 }
@@ -708,7 +708,7 @@ int GetSDCardGcodeFileNum(void)
  */
 bool IsExistPowerOffDurPrint(void)
 {
-    return recovery.info.recovery_flag;
+    return recovery_flag;
 }
 
 /**
@@ -3062,7 +3062,7 @@ static void TouVarCancelResetPic033(void)
 static void TouVarContinuePrintPic036(void)
 {
     /* recovery local-print */
-    if(recovery.info.recovery_flag)
+    if(recovery_flag)
     {
         AutoUIPowerOffRecovery();
         SERIAL_ECHOLN(CMDSTR_LOCALPRT_RESUME);
@@ -3078,7 +3078,7 @@ static void TouVarContinuePrintPic036(void)
 static void TouVarCancelPrintPic036(void)
 {
     /* stop local-print */
-    if(recovery.info.recovery_flag)
+    if(recovery_flag)
     {
         gLcdAutoUI.SwitchBackgroundPic(AUTOUI_MAIN_WINDOW);
         /* remove file that record information print-job recovery */
@@ -3253,7 +3253,7 @@ static void TouVarContinuePrintPic040(void)
     }
 
     /* local printing */
-    if(((LcdAutoUIGetTimeMs() - gLcdAutoUI.evtRepMatToConPriTmr) > (1000 * DEFAULT_STEPPER_DEACTIVE_TIME)) && \
+    if(((LcdAutoUIGetTimeMs() - gLcdAutoUI.evtRepMatToConPriTmr) > (1000 * DEFAULT_STEPPER_TIMEOUT_SEC)) && \
        (gLcdAutoUI.pauseType == PAUSE_NO_MAT))
     {
         /* waiting for In/Out material finish */

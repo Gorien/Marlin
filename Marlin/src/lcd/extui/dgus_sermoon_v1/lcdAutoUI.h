@@ -1,5 +1,4 @@
-#ifndef __LCDAUTOUI_H
-#define __LCDAUTOUI_H
+#pragma once
 
 #include "../../../inc/MarlinConfig.h"
 
@@ -988,5 +987,3 @@ extern LcdAutoUIStruct_t gLcdAutoUI;
 
 extern void LcdAutoUIMoveXYCmd(int _posX, int _posY);
 extern void LcdAutoUIMoveZCmd(int _posZ);
-
-#endif/* __LCDAUTOUI_H */

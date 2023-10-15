@@ -1,5 +1,4 @@
-#ifndef RTS_H
-#define RTS_H
+#pragma once
 
 #include "string.h"
 #include "../../../inc/MarlinConfig.h"
@@ -364,4 +363,4 @@ extern char errorway;
 extern char errornum;
 extern char error_sd_num;
 
-#endif// RTS_H
+extern bool recovery_flag;

@@ -44,7 +44,7 @@ float last_zoffset = 0.0;
 
 int power_off_type_yes = 0;
 
-const float manual_feedrate_mm_m[] = { 50*60, 50*60, 4*60, 60 };
+const float rts_manual_feedrate_mm_m[] = { 50*60, 50*60, 4*60, 60 };
 
 HMI_ValueTypeDef HMI_ValueStruct;
 
@@ -111,6 +111,7 @@ bool AutohomeZflag = false;
 bool start_manual_flag = false;
 bool TakeTurn_heat_flag = false;
 char cmdbuf[20] = {0};
+bool recovery_flag = false;
 
 unsigned short int checktime = 0;
 
@@ -135,7 +136,7 @@ void RTS_line_to_current(AxisEnum axis)
 {
   if (!planner.is_full())
   {
-    planner.buffer_line(current_position, MMM_TO_MMS(manual_feedrate_mm_m[(int8_t)axis]), active_extruder);
+    planner.buffer_line(current_position, MMM_TO_MMS(rts_manual_feedrate_mm_m[(int8_t)axis]), active_extruder);
   }
 }
 
@@ -241,7 +242,7 @@ void RTSSHOW::RTS_SDCardInit(void)
         //SD卡挂载成功
         SERIAL_ECHOLN("***sd card mount success***");
 
-        uint16_t fileCnt = card.get_num_Files();
+        uint16_t fileCnt = card.get_num_items();
         card.getWorkDirName();
         if (card.filename[0] != '/') {
           card.cdup();
@@ -316,7 +317,7 @@ void RTSSHOW::RTS_SDCardUpate(void)
     {
       card.mount();
       RTS_SDCardInit();
-      if(recovery.info.recovery_flag) power_off_type_yes = 0;
+      if(recovery_flag) power_off_type_yes = 0;
     }
     else
     {
@@ -984,7 +985,7 @@ void RTSSHOW::RTS_SDcard_Stop()
   if(home_flag) planner.synchronize();
   if(heat_flag)
   {
-    card.stopSDPrint();
+    card.endFilePrintNow();
     queue.clear();
     quickstop_stepper();
     print_job_timer.stop();
@@ -1600,7 +1601,7 @@ void RTSSHOW::RTS_HandleData()
       if(recdat.data[0] == 1)
       {
         waitway = 6;
-        if (!TEST(axis_known_position, X_AXIS) || !TEST(axis_known_position, Y_AXIS))
+        if (!TEST(axes_trusted, X_AXIS) || !TEST(axes_trusted, Y_AXIS))
         {
           queue.enqueue_now_P(PSTR("G28"));
         }
@@ -1908,7 +1909,7 @@ void RTSSHOW::RTS_HandleData()
           RTS_SndData(ExchangePageBase + 10, ExchangepageAddr);
           change_page_font = 10;
         }
-        if(recovery.info.recovery_flag) 
+        if(recovery_flag) 
         {
           power_off_type_yes = 1;
 
@@ -1927,7 +1928,7 @@ void RTSSHOW::RTS_HandleData()
           RTS_SndData(ExchangePageBase + 1, ExchangepageAddr);
           change_page_font = 1;
         }
-        card.stopSDPrint();
+        card.endFilePrintNow();
         queue.clear();
         quickstop_stepper();
         print_job_timer.stop();
@@ -2187,7 +2188,7 @@ void EachMomentUpdate()
   if(ms > next_rts_update_ms)
   {
     // print the file before the power is off.
-    if((power_off_type_yes == 0) && lcd_sd_status && recovery.info.recovery_flag)
+    if((power_off_type_yes == 0) && lcd_sd_status && recovery_flag)
     {
       power_off_type_yes = 1;
       for(uint16_t i = 0;i < CardRecbuf.Filesum;i ++) 
@@ -2218,7 +2219,7 @@ void EachMomentUpdate()
       }
       return;
     }
-    else if((power_off_type_yes == 0) && !recovery.info.recovery_flag)
+    else if((power_off_type_yes == 0) && !recovery_flag)
     {
       power_off_type_yes = 1;
       if(language_change_font != 0)
@@ -2338,7 +2339,7 @@ void EachMomentUpdate()
         pause_action_flag = false;
         pause_position = current_position;
         pause_position.e = current_position[E_AXIS] - 3;
-        do_blocking_move_to_z(_MIN(current_position.z + Z_HOMING_HEIGHT, Z_MAX_POS), feedRate_t(NOZZLE_PARK_Z_FEEDRATE));
+        do_blocking_move_to_z(_MIN(current_position.z + Z_CLEARANCE_FOR_HOMING, Z_MAX_POS), feedRate_t(NOZZLE_PARK_Z_FEEDRATE));
         // queue.enqueue_now_P(PSTR("G1 X0 Y165 F1200"));
         do_blocking_move_to_xy(0.0f, 165.0f, feedRate_t(20)); // Avoiding edge collision
 

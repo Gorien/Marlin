@@ -3139,6 +3139,12 @@
  * :[ 'ORIGIN', 'FYSETC', 'HYPRECY', 'MKS', 'RELOADED', 'IA_CREALITY', 'E3S1PRO', 'SERMOON_V1' ]
  */
 
+#define RTS_AVAILABLE
+
+#define EEPROM_PLR
+#if ENABLED(EEPROM_PLR)
+    #define PLR_ADDR 1000
+#endif
 
 #define DGUS_LCD_UI SERMOON_V1
 #if DGUS_UI_IS(MKS)
