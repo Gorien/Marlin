@@ -3139,8 +3139,16 @@ static void TouVarBedCaliSavePic027(void)
         current_position.z = 0;
         queue.enqueue_one_now(PSTR("G92 Z0.0"));
     }
-    /* go to next point */
-    queue.inject_P(PSTR("G29 S2"));
+    
+    if((gLcdAutoUI.pointCntCaliCur - 1) == 0)
+    {
+        queue.inject_P(PSTR("G29 S1"));
+    }
+    else
+    {
+        /* go to next point */
+        queue.inject_P(PSTR("G29 S2"));
+    }
 
     /* clear bed calibration Z offset */
     gLcdAutoUI.bedCaliZOffset = 0;
@@ -4658,7 +4666,7 @@ void LcdAutoUIStruct_t::AutoUIBedCaliFlow(void)
             
             LcdAutoUISetBedLeveling(false);
             flowStepCnt.fscBedCali ++;
-            queue.inject_P(PSTR("G29 S1"));
+            queue.inject_P(PSTR("G28"));
 
             break;
 
